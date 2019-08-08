@@ -100,7 +100,6 @@ class Blockchain(object):
 
         beg = guess_hash[:6]
         # Check if 6 leading 0's in the hash result
-
         if beg == "000000":
             return True
         else:
@@ -148,7 +147,6 @@ blockchain = Blockchain()
 def mine():
     # We run the proof of work algorithm to get the next proof...
     proof = blockchain.proof_of_work(blockchain.last_block)
-
     # We must receive a reward for finding the proof.
     # TODO:
     # The sender is "0" to signify that this node has mine a new coin
@@ -157,7 +155,6 @@ def mine():
     blockchain.new_transaction(0, node_identifier, 1)
 
     # Forge the new Block by adding it to the chaiN
-    block = blockchain.new_block(proof, hash(blockchain.last_block))
     # Send a response with the new block
     response = {
         'message': "New Block Forged",
