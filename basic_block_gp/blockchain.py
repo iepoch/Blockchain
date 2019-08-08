@@ -87,7 +87,7 @@ class Blockchain(object):
     @staticmethod
     def valid_proof(last_proof, proof):
         """
-        Validates the Proof:  
+        Validates the Proof:
         Does hash(block_string, proof)
         contain 6 leading zeroes?
         """
@@ -119,9 +119,15 @@ class Blockchain(object):
             print("\n-------------------\n")
             # Check that the hash of the block is correct
             # TODO: Return false if hash isn't correct
+            last_block_hash = self.hash(last_block)
 
+            if block['previous_hash'] != last_block_hash:
+                return False
             # Check that the Proof of Work is correct
             # TODO: Return false if proof isn't correct
+
+            if not self.valid_proof(last_block['proof'], block['proof'], last_block_hash):
+                return False
 
             last_block = block
             current_index += 1
@@ -142,7 +148,7 @@ blockchain = Blockchain()
 @app.route('/mine', methods=['GET'])
 def mine():
     # We run the proof of work algorithm to get the next proof...
-    proof = blockchain.proof_of_work(blockchain.last_block)
+    proof = blockchain.proof_of_work(blockchain.hash(blockchain.last_block))
 
     # We must receive a reward for finding the proof.
     # The sender is "0" to signify that this node has mine a new coin
