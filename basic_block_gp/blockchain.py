@@ -8,7 +8,7 @@ from flask import Flask, jsonify, request
 
 class Blockchain(object):
     def __init__(self):
-        self.chain = []
+        self.chain = []  # List of Blocks
         self.current_transactions = []
         self.nodes = set()
 
@@ -33,7 +33,7 @@ class Blockchain(object):
 
         # Reset the current list of transactions
         self.current_transactions = []
-
+        # add it to the chain of blocks
         self.chain.append(block)
         return block
 
@@ -41,7 +41,7 @@ class Blockchain(object):
         """
         Creates a new transaction to go into the next mined Block
 
-        :param sender: <str> Address of the Recipient
+        :param sender: <str> Address of the Sender
         :param recipient: <str> Address of the Recipient
         :param amount: <int> Amount
         :return: <int> The index of the BLock that will hold this transaction
@@ -80,8 +80,12 @@ class Blockchain(object):
         Find a number p such that hash(last_block_string, p) contains 6 leading
         zeroes
         """
+        proof = 0
 
-        pass
+        while self.valid_proof(last_proof, proof):
+            proof += 1
+
+        return proof
 
     @staticmethod
     def valid_proof(last_proof, proof):
@@ -89,8 +93,18 @@ class Blockchain(object):
         Validates the Proof:  Does hash(block_string, proof) contain 6
         leading zeroes?
         """
-        # TODO
-        pass
+        # Build the string to hash
+        guess = f'{last_proof}{proof}'.encode
+        # use hash function
+        guess_hash = hashlib.sha256(guess).hexdigest()
+
+        beg = guess_hash[:6]
+        # Check if 6 leading 0's in the hash result
+
+        if beg == "000000":
+            return True
+        else:
+            return False
 
     def valid_chain(self, chain):
         """
@@ -133,17 +147,17 @@ blockchain = Blockchain()
 @app.route('/mine', methods=['GET'])
 def mine():
     # We run the proof of work algorithm to get the next proof...
-    proof = blockchain.proof_of_work()
+    proof = blockchain.proof_of_work(blockchain.last_block)
 
     # We must receive a reward for finding the proof.
     # TODO:
     # The sender is "0" to signify that this node has mine a new coin
     # The recipient is the current node, it did the mining!
     # The amount is 1 coin as a reward for mining the next block
+    blockchain.new_transaction(0, node_identifier, 1)
 
-    # Forge the new Block by adding it to the chain
-    # TODO
-
+    # Forge the new Block by adding it to the chaiN
+    block = blockchain.new_block(proof, hash(blockchain.last_block))
     # Send a response with the new block
     response = {
         'message': "New Block Forged",
@@ -183,4 +197,5 @@ def full_chain():
 
 # Run the program on port 5000
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # app.run(host='0.0.0.0', port=5000)
+    app.run(host='localhost', port=5000)
