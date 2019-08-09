@@ -87,14 +87,14 @@ class Blockchain(object):
     #     return proof
 
     @staticmethod
-    def valid_proof(last_proof, proof):
+    def valid_proof(last_block_string, proof):
         """
         Validates the Proof:
         Does hash(block_string, proof)
         contain 6 leading zeroes?
         """
         # build string to hash
-        guess = f'{last_proof}{proof}'.encode()
+        guess = f'{last_block_string}{proof}'.encode()
         # use hash function
         guess_hash = hashlib.sha256(guess).hexdigest()
         # check if 6 leading 0's
@@ -147,12 +147,17 @@ node_identifier = str(uuid4()).replace('-', '')
 blockchain = Blockchain()
 
 
-@app.route('/mine', methods=['GET'])
+@app.route('/mine', methods=['POST', 'GET'])
 def mine():
     # We run the proof of work algorithm to get the next proof...
-    proof = request.args.get("proof")
-    new_proof = request.args.get("new_proof")
-    if blockchain.valid_proof(last_proof, proof):
+    values = request.get_json()
+    required = ['proof']
+    print(required)
+    if not all(k in values for k in required):
+        return 'Missing Values', 400
+
+    print(f'This is the proof', values)
+    if not blockchain.valid_proof(blockchain.last_block['previous_hash'], values['proof']):
         # We must receive a reward for finding the proof.
         # The sender is "0" to signify that this node has mine a new coin
         # The recipient is the current node, it did the mining!
@@ -160,7 +165,8 @@ def mine():
         blockchain.new_transaction(0, node_identifier, 1)
 
         # Forge the new Block by adding it to the chain
-        block = blockchain.new_block(proof, blockchain.last_block)
+        block = blockchain.new_block(
+            values['proof'], blockchain.hash(blockchain.last_block))
 
         # Send a response with the new block
         response = {
@@ -171,11 +177,11 @@ def mine():
             'previous_hash': block['previous_hash'],
         }
         return jsonify(response), 200
-    else:
-        response = {
-            "message": "Not Valid"
-        }
-        return jsonify(response), 304
+        # else:
+        #     response = {
+        #         "message": "Not Valid"
+        #     }
+        #     return jsonify(response), 304
 
 
 @app.route('/transactions/new', methods=['POST'])
@@ -206,11 +212,11 @@ def full_chain():
     return jsonify(response), 200
 
 
-@app.route('/last_proof', methods=['GET'])
-def last_proof():
+@app.route('/last_block_string', methods=['GET'])
+def last_block_string():
     response = {
         # TODO: Return the the proof
-        'last_proof': blockchain.last_block['proof']
+        'last_block_string': blockchain.last_block
     }
     return jsonify(response), 200
 
