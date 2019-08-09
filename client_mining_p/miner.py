@@ -31,8 +31,8 @@ def valid_proof(last_proof, proof):
     # use hash function
     guess_hash = hashlib.sha256(guess).hexdigest()
     # check if 6 leading 0's
-    beg = guess_hash[:4]  # [:6]
-    if beg == "0000":
+    beg = guess_hash[0:2]  # [:6]
+    if beg == "00":
         return True
     else:
         return False
@@ -46,26 +46,31 @@ if __name__ == '__main__':
         node = "http://localhost:5000"
 
     coins_mined = 0
+    proof = 0
     # Run forever until interrupted
     while True:
         # TODO: Get the last proof from the server and look for a new one
-
+        last_proof = requests.get(url=f'{node}/last_proof').json()
+        print(last_proof)
         # Look for a new one
-        new_proof = proof_of_work(last_proof)
+        new_proof = proof_of_work(last_proof['last_proof'])
 
         # TODO: When found, POST it to the server {"proof": new_proof}
 
         # TODO: We're going to have to research how to do a POST in Python
         # Do a POST in python
-        data = {'proof': new_proof}
+        data = {'proof': proof,
+                'last_proof': last_proof}
         r = requests.post(url=f'{node}/mine', data=data)
         # HINT: Research `requests` and remember we're sending our data as JSON
         # TODO: If the server responds with 'New Block Forged'
         # add 1 to the number of coins mined and print it.  Otherwise,
         # print the message from the server.
-        if r.message == 'New Block Firged':
-            coins_mined += 1
-            print(f'You have mined: {coins_mined} coins')
+
         print(r.message)
+        # if r.message == "New Block Forged":
+        #     coins_mined += 1
+        #     print(f'You have mined: {coins_mined} coins')
+        # # print(r.json('message'))
 
         pass
