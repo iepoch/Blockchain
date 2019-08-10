@@ -158,30 +158,29 @@ def mine():
 
     print(f'This is the proof', values)
     if not blockchain.valid_proof(blockchain.last_block['previous_hash'], values['proof']):
+        print("ERROR")
+        response = {'message': "The proof is invalid. May have already been submitted"
+                    }
+        return jsonify(response),
         # We must receive a reward for finding the proof.
         # The sender is "0" to signify that this node has mine a new coin
         # The recipient is the current node, it did the mining!
         # The amount is 1 coin as a reward for mining the next block
-        blockchain.new_transaction(0, node_identifier, 1)
+    blockchain.new_transaction(0, node_identifier, 1)
 
-        # Forge the new Block by adding it to the chain
-        block = blockchain.new_block(
-            values['proof'], blockchain.hash(blockchain.last_block))
+    # Forge the new Block by adding it to the chain
+    block = blockchain.new_block(
+        values['proof'], blockchain.hash(blockchain.last_block))
 
-        # Send a response with the new block
-        response = {
-            'message': "New Block Forged",
-            'index': block['index'],
-            'transactions': block['transactions'],
-            'proof': block['proof'],
-            'previous_hash': block['previous_hash'],
-        }
-        return jsonify(response), 200
-        # else:
-        #     response = {
-        #         "message": "Not Valid"
-        #     }
-        #     return jsonify(response), 304
+    # Send a response with the new block
+    response = {
+        'message': "New Block Forged",
+        'index': block['index'],
+        'transactions': block['transactions'],
+        'proof': block['proof'],
+        'previous_hash': block['previous_hash'],
+    }
+    return jsonify(response), 200
 
 
 @app.route('/transactions/new', methods=['POST'])

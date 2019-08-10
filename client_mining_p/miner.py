@@ -52,7 +52,7 @@ if __name__ == '__main__':
         r = requests.get(node+'/last_block_string')
         data = r.json()
         last_block_string = data['last_block_string']['previous_hash']
-
+        print(last_block_string)
         # Look for a new one
         new_proof = proof_of_work(last_block_string)
 
@@ -60,15 +60,15 @@ if __name__ == '__main__':
 
         # TODO: We're going to have to research how to do a POST in Python
         # Do a POST in python
-        data = {'proof': new_proof}
-        print('Data:', data)
-        r = requests.post(url=f'{node}/mine', data=data)
+        proof_data = {'proof': new_proof}
+        print('proof_data:', proof_data)
+        r = requests.post(url=f'{node}/mine', json=proof_data)
         # HINT: Research `requests` and remember we're sending our data as JSON
         # TODO: If the server responds with 'New Block Forged'
         # add 1 to the number of coins mined and print it.  Otherwise,
         # print the message from the server.
-
-        # if r.message == "New Block Forged":
-        #     coins_mined += 1
-        #     print(f'You have mined: {coins_mined} coins')
-        # print(r.json('message')
+        data = r.json()
+        if data.get('message') == "New Block Forged":
+            coins_mined += 1
+            print(f'You have mined: {coins_mined} coins')
+        print(data.get('message'))
