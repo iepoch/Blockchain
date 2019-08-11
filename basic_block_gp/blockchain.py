@@ -12,12 +12,11 @@ class Blockchain(object):
         self.current_transactions = []
         self.nodes = set()
 
-        self.new_block(previous_hash=1, proof=100)
+        self.new_block(previous_hash=1, proof=99)
 
     def new_block(self, proof, previous_hash=None):
         """
         Create a new Block in the Blockchain
-
         :param proof: <int> The proof given by the Proof of Work algorithm
         :param previous_hash: (Optional) <str> Hash of previous Block
         :return: <dict> New Block
@@ -40,7 +39,6 @@ class Blockchain(object):
     def new_transaction(self, sender, recipient, amount):
         """
         Creates a new transaction to go into the next mined Block
-
         :param sender: <str> Address of the Recipient
         :param recipient: <str> Address of the Recipient
         :param amount: <int> Amount
@@ -59,7 +57,6 @@ class Blockchain(object):
     def hash(block):
         """
         Creates a SHA-256 hash of a Block
-
         :param block": <dict> Block
         "return": <str>
         """
@@ -80,22 +77,34 @@ class Blockchain(object):
         Find a number p such that hash(last_block_string, p) contains 6 leading
         zeroes
         """
+        proof = 0
+        # for block 1, hash(1,p) = 000000x
+        while self.valid_proof(last_proof, proof) is False:
+            proof += 1
 
-        pass
+        return proof
 
     @staticmethod
     def valid_proof(last_proof, proof):
         """
-        Validates the Proof:  Does hash(block_string, proof) contain 6
-        leading zeroes?
+        Validates the Proof:  
+        Does hash(block_string, proof)
+        contain 6 leading zeroes?
         """
-        # TODO
-        pass
+        # build string to hash
+        guess = f'{last_proof}{proof}'.encode()
+        # use hash function
+        guess_hash = hashlib.sha256(guess).hexdigest()
+        # check if 6 leading 0's
+        beg = guess_hash[0:6]  # [:6]
+        if beg == "000000":
+            return True
+        else:
+            return False
 
     def valid_chain(self, chain):
         """
         Determine if a given blockchain is valid
-
         :param chain: <list> A blockchain
         :return: <bool> True if valid, False if not
         """
@@ -133,16 +142,16 @@ blockchain = Blockchain()
 @app.route('/mine', methods=['GET'])
 def mine():
     # We run the proof of work algorithm to get the next proof...
-    proof = blockchain.proof_of_work()
+    proof = blockchain.proof_of_work(blockchain.last_block)
 
     # We must receive a reward for finding the proof.
-    # TODO:
     # The sender is "0" to signify that this node has mine a new coin
     # The recipient is the current node, it did the mining!
     # The amount is 1 coin as a reward for mining the next block
+    blockchain.new_transaction(0, node_identifier, 1)
 
     # Forge the new Block by adding it to the chain
-    # TODO
+    block = blockchain.new_block(proof, blockchain.last_block)
 
     # Send a response with the new block
     response = {
@@ -177,10 +186,12 @@ def new_transaction():
 def full_chain():
     response = {
         # TODO: Return the chain and its current length
+        'currentChain': blockchain.chain,
+        'length': len(blockchain.chain),
     }
     return jsonify(response), 200
 
 
 # Run the program on port 5000
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='localhost', port=5000)
