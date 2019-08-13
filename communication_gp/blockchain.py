@@ -9,6 +9,8 @@ from uuid import uuid4
 
 from flask import Flask, jsonify, request
 
+from urllib.parse import urlparse
+
 
 class Blockchain(object):
     def __init__(self):
@@ -16,7 +18,12 @@ class Blockchain(object):
         self.current_transactions = []
         self.nodes = set()
 
-        self.new_block(previous_hash=1, proof=99)
+        # create the genesis_block
+        if len(self.chain) == 0:
+            self.create_genesis_block()
+
+    def create_genesis_block(self):
+        self.new_block(proof=5981, previous_hash=1)
 
     def new_block(self, proof, previous_hash=None):
         """
@@ -105,6 +112,12 @@ class Blockchain(object):
             return True
         else:
             return False
+
+    def register_node(self, address):
+
+        parsed_url = urlparse(address)
+
+        self.nodes.add(parsed_url.netloc)
 
     def valid_chain(self, chain):
         """
@@ -222,6 +235,22 @@ def last_block_string():
     return jsonify(response), 200
 
 
-# Run the program on port 5000
+@app.route('/nodes_register', methods=['POST'])
+def register_nodes():
+    values = request.get_json()
+    nodes = values['nodes']
+
+    if nodes is None:
+        return "Error, please supply node info", 400
+    for n in nodes:
+        blockchain.register_node(n)
+
+    response = {
+        'message': "New nodes have been added successfully",
+        'total_nodes': list(blockchain.nodes)
+    }
+
+
+    # Run the program on port 5000
 if __name__ == '__main__':
     app.run(host='localhost', port=5000, debug=True)
