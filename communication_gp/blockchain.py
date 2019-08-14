@@ -119,6 +119,16 @@ class Blockchain(object):
 
         self.nodes.add(parsed_url.netloc)
 
+    def brodcast_new_block(self, block):
+        neighbors = self.nodes
+        post_data = {'block': block}
+
+        for node in neighbors:
+            r = request.post(f'http://{node}/block/new', json=post_data)
+
+            if response.status_code != 200:
+                # TODO:  Error handling
+
     def valid_chain(self, chain):
         """
         Determine if a given blockchain is valid
@@ -186,7 +196,7 @@ def mine():
     # Forge the new Block by adding it to the chain
     block = blockchain.new_block(
         values['proof'], blockchain.hash(blockchain.last_block))
-
+    blockchain.brodcast_new_block(block)
     # Send a response with the new block
     response = {
         'message': "New Block Forged",
@@ -251,6 +261,27 @@ def register_nodes():
     }
 
 
-    # Run the program on port 5000
+@app.route('/block/new', method=['POST'])
+def receive_block():
+    values = request.get_json()
+
+    new_last_block = values['block']
+    old_last_block = blockchain.last_block
+
+    if new_last_block['index'] == old_last_block['index'] + 1:
+        if new_last_block['previous_hash'] == blockchain.hash(old_last_block):
+            block_string = json.dump(old_last_block, sort_keys=True).encode()
+            if blockchain.valid_proof(block_string, new_last_block['proof']):
+                print("New Block added!")
+                blockchain.add(new_last_block)
+                return 'Block Accepted', 200
+            else:
+                # TODO Proof of work is invalid
+        else:
+            # TODO Previous has is invalid
+    else:
+        # TODO Indexes are not consecutive
+
+            # Run the program on port 5000
 if __name__ == '__main__':
     app.run(host='localhost', port=5000, debug=True)
